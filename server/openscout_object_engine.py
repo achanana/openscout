@@ -240,7 +240,7 @@ class OpenScoutObjectEngine(cognitive_engine.Engine):
                             mask = cv2.inRange(hsv, lower_boundary, upper_boundary)
                             final = cv2.bitwise_and(hsv, hsv, mask=mask)
                             path = self.storage_path + "/detected/hsv.jpg"
-                            cv2.imwrite(path, final)
+                            cv2.imwrite(path, cv2.cvtColor(final, cv2.COLOR_HSV2RGB))
                     except IndexError as e:
                         logger.error(f"IndexError while getting bounding boxes [{traceback.format_exc()}]")
                         return result_wrapper
