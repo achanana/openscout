@@ -70,6 +70,7 @@ class OpenScoutObjectEngine(cognitive_engine.Engine):
         self.lasttime = time.time()
         self.lastcount = 0
         self.lastprint = self.lasttime
+        self.hsv_threshold = args.hsv_threshold
 
         if args.exclude:
             self.exclusions = list(map(int, args.exclude.split(","))) #split string to int list
@@ -144,15 +145,13 @@ class OpenScoutObjectEngine(cognitive_engine.Engine):
                      "cls": cls, "confidence": conf, "link": link },
                 )
 
-    def passes_hsv_filter(self, image, bbox, hsv_min=[30,100,100], hsv_max=[50,255,255], threshold=1.0,) -> bool:
+    def passes_hsv_filter(self, image, bbox, hsv_min=[30,100,100], hsv_max=[50,255,255], threshold=5.0,) -> bool:
         cropped = image[round(bbox[0]):round(bbox[2]), round(bbox[1]):round(bbox[3])]
         hsv = cv2.cvtColor(cropped, cv2.COLOR_RGB2HSV)
         lower_boundary = np.array(hsv_min)
         upper_boundary = np.array(hsv_max)
         mask = cv2.inRange(hsv, lower_boundary, upper_boundary)
         final = cv2.bitwise_and(cropped, cropped, mask=mask)
-        path = self.storage_path + "/detected/hsv.jpg"
-        cv2.imwrite(path, final)
         percent = round(np.count_nonzero(mask) / np.size(mask) * 100, 2)
         logger.debug(f"HSV Filter Result: lower_bound:{hsv_min}, upper_bound:{hsv_max}, mask percentage:{percent}%")
         return (percent >= threshold)
@@ -213,7 +212,7 @@ class OpenScoutObjectEngine(cognitive_engine.Engine):
                         if extras.HasField('lower_bound'):
                             lower_bound = [extras.lower_bound.H, extras.lower_bound.S, extras.lower_bound.V]
                             upper_bound = [extras.upper_bound.H, extras.upper_bound.S, extras.upper_bound.V]
-                            hsv_filter = self.passes_hsv_filter(image_np, box, lower_bound, upper_bound, threshold=1.5)
+                            hsv_filter = self.passes_hsv_filter(image_np, box, lower_bound, upper_bound, threshold=self.hsv_threshold)
                         r.append({"id": i, "class": names[i], "score": scores[i], "lat": lat, "lon": lon, "box": box, "hsv_filter": hsv_filter })
                         self.storeDetection(extras.drone_id, lat, lon, names[i],scores[i], os.environ["WEBSERVER"]+"/detected/"+filename if self.store_detections else "" )
 
@@ -234,6 +233,14 @@ class OpenScoutObjectEngine(cognitive_engine.Engine):
                         path = self.storage_path + "/detected/latest.jpg"
                         img.save(path, format="JPEG")
                         logger.info("Stored image: {}".format(path))
+                        if extras.HasField('lower_bound'):
+                            hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
+                            lower_boundary = np.array([extras.lower_bound.H, extras.lower_bound.S, extras.lower_bound.V])
+                            upper_boundary = np.array([extras.upper_bound.H, extras.upper_bound.S, extras.upper_bound.V])
+                            mask = cv2.inRange(hsv, lower_boundary, upper_boundary)
+                            final = cv2.bitwise_and(hsv, hsv, mask=mask)
+                            path = self.storage_path + "/detected/hsv.jpg"
+                            cv2.imwrite(path, final)
                     except IndexError as e:
                         logger.error(f"IndexError while getting bounding boxes [{traceback.format_exc()}]")
                         return result_wrapper

@@ -81,6 +81,11 @@ def main():
         "-a", "--auth", default="", help="Share key for redis user."
     )
 
+    parser.add_argument(
+        "-h", "--hsv", type=float, default=5.0, help="HSV filter threshold [0.0-100.0]"
+    )
+
+
 
     args, _ = parser.parse_known_args()
 
