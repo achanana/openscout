@@ -193,7 +193,7 @@ class ObstacleAvoidanceEngine(cognitive_engine.Engine):
         actuation_vector = 0
         frame_width = img.shape[1]
         frame_height = img.shape[0]
-        scrapY, scrapX = frame_height//3, frame_width//4
+        scrapY, scrapX = frame_height//3, frame_width//5
 
         input_batch = self.transform(img).to(self.device)
 
@@ -230,8 +230,9 @@ class ObstacleAvoidanceEngine(cognitive_engine.Engine):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             cv2.circle(full_depth_map, (scrapX + cX, scrapY + cY), 5, (0, 255, 0), -1)
-            cv2.putText(full_depth_map, "safe", (scrapX + cX, scrapY + cY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            actuation_vector = scrapX + cX - (full_depth_map.shape[1] / 2) + 1
+            actuation_vector = (scrapX + cX - (full_depth_map.shape[1] / 2) ) / scrapX
+            cv2.putText(full_depth_map, actuation_vector, (scrapX + cX, scrapY + cY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
         except:
             pass
 
