@@ -223,6 +223,7 @@ class ObstacleAvoidanceEngine(cognitive_engine.Engine):
         ret, thresh = cv2.threshold(depth_map, 254, 255, 0)
         # find contours in the binary image
         contours, h = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        #full_depth_map = cv2.merge(thresh, full_depth_map)
         try:
             c = max(contours, key=cv2.contourArea)
             # calculate moments for each contour
@@ -230,8 +231,8 @@ class ObstacleAvoidanceEngine(cognitive_engine.Engine):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             cv2.circle(full_depth_map, (scrapX + cX, scrapY + cY), 5, (0, 255, 0), -1)
-            actuation_vector = (scrapX + cX - (full_depth_map.shape[1] / 2) ) / scrapX
-            cv2.putText(full_depth_map, actuation_vector, (scrapX + cX, scrapY + cY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            actuation_vector = (scrapX + cX - (full_depth_map.shape[1] / 2) + 1) / ( full_depth_map.shape[1] / 2 - scrapX )
+            cv2.putText(full_depth_map, "{:.4f}".format(actuation_vector), (scrapX + cX, scrapY + cY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         except:
             pass
