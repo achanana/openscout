@@ -19,7 +19,7 @@
 #
 #
 from gabriel_server.network_engine import engine_runner
-from obstacle_avoidance_engine import ObstacleAvoidanceEngine
+from obstacle_avoidance_engine import MidasAvoidanceEngine, Metric3DAvoidanceEngine
 import logging
 import argparse
 
@@ -70,12 +70,21 @@ def main():
         "-a", "--auth", default="", help="Share key for redis user."
     )
 
+    parser.add_argument(
+        "-i", "--roi", type=int, default=190, help="Depth threshold for filtering."
+    )
+
+    parser.add_argument(
+        "--metric3d", action="store_true", default=False, help="Use Metric3D for avoidance"
+    )
 
     args, _ = parser.parse_known_args()
 
     def engine_setup():
-        engine = ObstacleAvoidanceEngine(args)
-
+        if args.metric3d:
+            engine = Metric3DAvoidanceEngine(args)
+        else:
+            engine = MidasAvoidanceEngine(args)
         return engine
 
     engine_runner.run(engine=engine_setup(), source_name=args.source, server_address=args.gabriel, all_responses_required=True)
